@@ -1,6 +1,3 @@
-Here’s a polished, good-looking version of your README that uses clear hierarchy, spacing, and some visual polish to make it easier to skim.
-
-```markdown
 # 🌐 Pipewise – LLM-Assisted Pandapipes Analysis
 
 Pipewise is a **full-stack application** that helps non-technical users understand and improve gas/heat networks modeled in **pandapipes**.  
@@ -27,7 +24,6 @@ It combines:
 
 ## 📂 Repository Structure
 
-```
 
 backend/
 agents/        # Agent modules (simulate, KPI, diagnostics, optimize, toolsmith)
@@ -39,9 +35,9 @@ components/    # React components
 lib/           # API helpers
 pages/         # Next.js pages (UI flows, chat)
 styles/        # Tailwind styles
-.git-hidden/     # Ignored data
 
-````
+
+
 
 ---
 
