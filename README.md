@@ -1,4 +1,11 @@
-# 🌐 Pipewise – LLM-Assisted Pandapipes Analysis
+# 🌐 Pipewise – LLM-Assisted Pandapipes Analysis  
+
+[![Docker](https://img.shields.io/badge/Docker-ready-blue?logo=docker)](https://www.docker.com/)  
+[![Python](https://img.shields.io/badge/Python-3.11+-green?logo=python)](https://www.python.org/)  
+[![Node](https://img.shields.io/badge/Node-18+-green?logo=node.js)](https://nodejs.org/)  
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-teal?logo=fastapi)](https://fastapi.tiangolo.com/)  
+[![Next.js](https://img.shields.io/badge/Next.js-13+-black?logo=next.js)](https://nextjs.org/)  
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)  
 
 Pipewise is a **full-stack application** that helps non-technical users understand and improve gas/heat networks modeled in **pandapipes**.  
 
@@ -271,7 +278,3 @@ pp.create_pipe_from_parameters(
 
 ---
 
-
-
-Would you like me to also generate **badges (Docker, Node, Python, License, etc.)** at the top so it looks like a polished open-source project on GitHub?
-```
