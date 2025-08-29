@@ -1,0 +1,33 @@
+How these pieces fit with your orchestrator
+
+backend/core/agent_orchestrator.py can call:
+
+from backend.agents.supervisor import run_supervisor
+
+run_supervisor(intent="simulate", payload={"network_code": "...", "options": {...}})
+
+Agents self-register into the global REGISTRY on import, so the supervisor can plan and invoke them.
+
+You can still bypass the supervisor and call each agent’s entrypoint directly (e.g., simulate_agent.run_simulation(...)) in tests.
+
+Next steps (where to add real logic)
+
+In simulate_agent.py, replace _fake_solve with pandapipes build/run:
+
+Safely construct a net from network_code or move to a JSON network schema.
+
+Call pp.pipeflow(net, **solver_args).
+
+Populate NodeResult/EdgeResult from net.res_* DataFrames.
+
+In supervisor.py, wire the optional LangChain agent:
+
+Convert ToolSpecs to LangChain Tool objects.
+
+Use an OpenAI Tools or ReAct agent that can select tools given the user goal.
+
+In optimize_agent.py, add better parameter application (templating) and advanced strategies (Bayesian, CMA-ES).
+
+In diagnostics_agent.py and kpi_agent.py, replace heuristics with validated business rules and thresholds.
+
+In toolsmith_agent.py, optionally persist generated code and add a review/test pipeline before registering.

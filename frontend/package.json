@@ -1,0 +1,22 @@
+{
+  "name": "pipewise-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000"
+  },
+  "dependencies": {
+    "react-markdown": "^8.0.5",
+    "next": "13.5.4",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.3.0",
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.24"
+  }
+}

@@ -1,0 +1,27 @@
+Usage notes
+
+Every tool exposes:
+
+name and description for discovery.
+
+a run(**kwargs) method with keyword arguments only (consistent interface).
+
+get_tool(**options) to construct/configure the tool.
+
+The pipeline typically looks like:
+
+from backend.tools.pandapipes_runner import get_tool as get_runner
+from backend.tools.kpi_calculator import get_tool as get_kpis
+from backend.tools.issue_detector import get_tool as get_issues
+from backend.tools.suggestor import get_tool as get_suggest
+
+runner = get_runner()
+raw = runner.run(network=net, simulation_params={"base_pressure_bar": 5.0})
+kpis = get_kpis().run(network=net, results=raw)
+issues = get_issues().run(kpis=kpis)
+suggestions = get_suggest().run(issues=issues)
+
+
+The scenario_engine composes everything for parameter sweeps/DOE and returns structured results (using your core/models.py when available, otherwise minimal fallbacks so the code runs now).
+
+All pandapipes-specific execution is clearly marked as TODO in pandapipes_runner.py so you can wire the real net objects and result tables later without breaking the current API surface.

@@ -1,0 +1,24 @@
+# General
+.git
+.gitignore
+README.md
+docker-compose.yml
+
+# Node / Next.js
+node_modules
+npm-debug.log
+.next
+out
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+.eggs
+*.log
+.venv
+env
+venv
+ENV

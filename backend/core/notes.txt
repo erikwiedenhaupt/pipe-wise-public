@@ -1,0 +1,17 @@
+Notes, limitations and TODOs
+
+storage.py is a local sqlite + JSON payload stub. TODO: swap to real DB + object store for production.
+
+sandbox.py uses resource.setrlimit on POSIX systems to set CPU and memory limits. Disabling network / using seccomp or network namespaces is not implemented here and typically requires containerization or root privileges — I've added comments and best-effort privilege dropping.
+
+agent_orchestrator.py contains a minimal orchestrator that runs a sandboxed Python snippet which produces sample KPIs, issues and suggestions. Replace the snippet with a real worker or integrate with a queue + container runtime for production.
+
+tool_registry.py is an in-memory registry with optional persistence; storage listing/cleanup methods should be added later.
+
+If you want, I can:
+
+wire these into backend/main.py with a few FastAPI endpoints for creating projects / starting runs / listing runs;
+
+replace the snippet worker with a more realistic KPI computation using pandapipes (if you confirm pandapipes will be available in the runtime);
+
+extend the sandbox to launch Docker containers (if allowed in your environment).

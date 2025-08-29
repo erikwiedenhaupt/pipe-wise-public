@@ -1,0 +1,17 @@
+backend/api/routes_projects.py already provided above. (Included for completeness.)
+
+These files are ready to drop into backend/api/. Wire them in backend/main.py like:
+
+from fastapi import FastAPI
+from backend.api import routes_meta, routes_projects, routes_network, routes_runs, routes_chat, routes_tools
+
+app = FastAPI()
+app.include_router(routes_meta.router)
+app.include_router(routes_projects.router)
+app.include_router(routes_network.router)
+app.include_router(routes_runs.router)
+app.include_router(routes_chat.router)
+app.include_router(routes_tools.router)
+
+
+Each endpoint uses models from core/models.py (with gentle fallbacks so the scaffolding runs). Replace the fallbacks as soon as your real schemas are in place, and connect the TODOs to your pandapipes, LangChain, and persistence layers.
