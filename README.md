@@ -31,20 +31,27 @@ It combines:
 
 ## 📂 Repository Structure
 
+```bash
+pipewise/
+├── backend/                   # FastAPI backend
+│   ├── agents/                # Small, self-registered agent modules
+│   ├── api/                   # REST & WebSocket routes
+│   ├── core/                  # Storage, registry, sandbox, orchestrator
+│   ├── tools/                 # Pandapipes runner, KPIs, issues, mutations, scenarios
+│   └── main.py                # FastAPI entrypoint
+│
+├── frontend/                  # Next.js + Tailwind frontend
+│   ├── components/            # Reusable UI components
+│   ├── lib/                   # API helpers
+│   ├── pages/                 # Next.js routes (chat, project flows, etc.)
+│   └── styles/                # Tailwind configs & globals
+│
+├── docker-compose.yml         # Full-stack orchestration
+├── .gitignore
+└── README.md
 
-backend/
-agents/        # Agent modules (simulate, KPI, diagnostics, optimize, toolsmith)
-api/           # FastAPI routers
-core/          # Storage, tool registry, sandbox, orchestrator, WS debugging
-tools/         # Pandapipes runner, KPI calc, issue detection, mutations, scenarios
-frontend/
-components/    # React components
-lib/           # API helpers
-pages/         # Next.js pages (UI flows, chat)
-styles/        # Tailwind styles
 
-
-
+```
 
 ---
 
