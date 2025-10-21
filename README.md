@@ -1,12 +1,3 @@
-Perfect — thanks for the context! Since this README is for the **public GitHub version** of your thesis project, I’ll:
-
-* Keep the **academic tone** (since it’s part of your seminar paper).
-* Include your **abstract** and **access note** explicitly.
-* Add **badges** and visuals for GitHub readability.
-* Integrate your **Quick Start (Appendix P)** cleanly under setup instructions.
-* Keep everything markdown-compatible for GitHub’s renderer (including code, tables, and links).
-
-Here’s your **polished, badge-ready README.md** for `pipe-wise-public` 👇
 
 ---
 
@@ -230,4 +221,3 @@ Licensed under the **MIT License** — see [`LICENSE`](./LICENSE).
 
 ---
 
-Would you like me to make a **lightweight academic header banner (SVG with title + badges)** to go above the README, so it looks professional on GitHub (like a research project page)?
