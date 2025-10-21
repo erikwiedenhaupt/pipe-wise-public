@@ -1,16 +1,5 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pipe-Wise Banner (SVG)</title>
-  <style>
-    body { background: #0f172a; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
-    .wrapper { width:100%; max-width:1100px; }
-  </style>
-</head>
-<body>
-  <!-- SVG banner for GitHub README: copy the <svg> element into your README.md or host as image -->
+
+
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="1200" height="360" role="img" aria-labelledby="titleDesc">
     <defs>
       <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
@@ -82,9 +71,3 @@
       </g>
     </g>
   </svg>
-
-  <div style="width:100%;max-width:1100px;margin-top:18px;text-align:center;color:#cfe9ff;font-family:Segoe UI, Roboto, Arial;font-size:13px;">
-    <div style="opacity:0.9">Tip: Copy the <code>&lt;svg&gt;…&lt;/svg&gt;</code> element above directly into your README.md or export as an image and reference it.</div>
-  </div>
-</body>
-</html>
