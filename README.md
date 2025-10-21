@@ -1,3 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pipe-Wise Banner (SVG)</title>
+  <style>
+    body { background: #0f172a; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
+    .wrapper { width:100%; max-width:1100px; }
+  </style>
+</head>
+<body>
+  <!-- SVG banner for GitHub README: copy the <svg> element into your README.md or host as image -->
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="1200" height="360" role="img" aria-labelledby="titleDesc">
+    <defs>
+      <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+        <stop offset="0%" stop-color="#0ea5a4" stop-opacity="0.95" />
+        <stop offset="100%" stop-color="#6366f1" stop-opacity="0.95" />
+      </linearGradient>
+      <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="6" result="b" />
+        <feBlend in="SourceGraphic" in2="b" />
+      </filter>
+      <style type="text/css"><![CDATA[
+        .title{font:700 44px/1.05 'Segoe UI', Roboto, Arial; fill:#ffffff}
+        .subtitle{font:400 18px/1.2 'Segoe UI', Roboto, Arial; fill:#e6eef8}
+        .meta{font:600 13px/1 'Segoe UI', Roboto, Arial; fill:#0f172a}
+        .badgeText{font:600 12px/1 'Segoe UI', Roboto, Arial; fill:#0f172a}
+      ]]></style>
+    </defs>
+
+    <rect width="1200" height="360" rx="16" fill="url(#g1)" />
+    <g transform="translate(48,40)">
+      <!-- Left: logo mark (stylized pipe network) -->
+      <g transform="translate(0,0)">
+        <circle cx="84" cy="84" r="72" fill="#0b1020" fill-opacity="0.12" />
+        <g transform="translate(24,24)" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" filter="url(#soft)">
+          <path d="M24 0 L56 0 L56 32" fill="none"/>
+          <circle cx="0" cy="24" r="10" fill="#fff" />
+          <circle cx="56" cy="32" r="10" fill="#fff" />
+          <circle cx="40" cy="72" r="10" fill="#fff" />
+          <path d="M0 24 L40 72" fill="none"/>
+        </g>
+      </g>
+
+      <!-- Title and subtitle -->
+      <g transform="translate(180,8)">
+        <text class="title">Pipe‑Wise</text>
+        <text class="subtitle" y="56">Digital AI Twin for Urban Infrastructure — conversational, safe, and reproducible</text>
+
+        <!-- Badges -->
+        <g transform="translate(0,96)">
+          <!-- MIT -->
+          <rect x="0" y="0" rx="6" width="118" height="32" fill="#ffffff" />
+          <text class="meta" x="12" y="21">MIT License</text>
+
+          <!-- Docker -->
+          <rect x="136" y="0" rx="6" width="118" height="32" fill="#ffffff" />
+          <text class="meta" x="148" y="21">Docker-ready</text>
+
+          <!-- Python -->
+          <rect x="272" y="0" rx="6" width="140" height="32" fill="#ffffff" />
+          <text class="meta" x="284" y="21">Python 3.11+</text>
+
+          <!-- Paper -->
+          <rect x="428" y="0" rx="6" width="240" height="32" fill="#ffffff" />
+          <text class="meta" x="440" y="21">Seminar Thesis — Wiedenhaupt, 2025</text>
+        </g>
+
+        <!-- small footer text -->
+        <text class="subtitle" x="0" y="160">Public version: <tspan font-weight="700">github.com/erikwiedenhaupt/pipe-wise-public</tspan> • Contact: erik.wiedenhaupt@ieg-extern.fraunhofer.de</text>
+      </g>
+
+      <!-- Right: decorative network curve -->
+      <g transform="translate(840,40)">
+        <path d="M0 0 C40 20, 80 60, 120 80 C160 100, 200 60, 240 32 C280 4, 320 36, 360 16" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+        <g transform="translate(32,0)">
+          <circle cx="28" cy="20" r="8" fill="#fff"/>
+          <circle cx="112" cy="60" r="8" fill="#fff"/>
+          <circle cx="196" cy="36" r="8" fill="#fff"/>
+        </g>
+      </g>
+    </g>
+  </svg>
+
+  <div style="width:100%;max-width:1100px;margin-top:18px;text-align:center;color:#cfe9ff;font-family:Segoe UI, Roboto, Arial;font-size:13px;">
+    <div style="opacity:0.9">Tip: Copy the <code>&lt;svg&gt;…&lt;/svg&gt;</code> element above directly into your README.md or export as an image and reference it.</div>
+  </div>
+</body>
+</html>
 
 ---
 
@@ -220,4 +310,5 @@ Licensed under the **MIT License** — see [`LICENSE`](./LICENSE).
 🔗 **Public Repo:** [https://github.com/erikwiedenhaupt/pipe-wise-public](https://github.com/erikwiedenhaupt/pipe-wise-public)
 
 ---
+
 
