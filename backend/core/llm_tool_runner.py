@@ -8,9 +8,10 @@ from openai import AzureOpenAI
 logger = logging.getLogger("llm")
 logger.setLevel(logging.INFO)
 
+# backend/core/llm_tool_runner.py
 def get_azure_client() -> AzureOpenAI:
     return AzureOpenAI(
-        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+        api_key=os.getenv("AZURE_OPENAI_KEY"),
         api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2025-04-01-preview"),
         azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
     )
@@ -18,7 +19,7 @@ def get_azure_client() -> AzureOpenAI:
 def _max_tokens_kwargs(max_tokens: Optional[int]) -> Dict[str, Any]:
     if max_tokens is None:
         return {}
-    # 2025-04-01-preview prefers max_completion_tokens for chat.completions
+    # Use max_tokens for chat.completions consistently
     return {"max_completion_tokens": max_tokens}
 
 class LLMToolRunner:

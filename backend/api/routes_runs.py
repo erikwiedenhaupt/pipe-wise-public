@@ -97,21 +97,52 @@ def get_run(run_id: str = Path(...), request: Request = None) -> RunGetRes:
         raise HTTPException(status_code=404, detail="Run not found")
     artifacts = _load_artifacts_for_run(request, run_id)
 
-    # Provide a lightweight summary view
+    # Sanitize noisy logs
+    def _clean_noise(s: Optional[str]) -> str:
+        if not s:
+            return ""
+        out = []
+        for ln in s.splitlines():
+            low = ln.lower()
+            # matplotlib noise
+            if "matplotlib" in low and ("not a writable directory" in low or "created a temporary cache directory" in low or "mplconfigdir" in low):
+                continue
+            if "mplconfigdir" in low:
+                continue
+            # generic worker-dir noise
+            if "is not a writable directory" in low and ("pipewise_worker" in low or "pipewise_storage" in low):
+                continue
+            out.append(ln)
+        return "\n".join(out).strip()
+
+    cleaned_logs = _clean_noise(run.logs or "")
+
     node_table = (artifacts.get("results") or {}).get("junction") or []
     pipe_table = (artifacts.get("results") or {}).get("pipe") or []
     pressures = [r.get("p_bar") for r in node_table if r.get("p_bar") is not None]
     velocities = [r.get("v_mean_m_per_s") for r in pipe_table if r.get("v_mean_m_per_s") is not None]
 
-    view = {
+    view: Dict[str, Any] = {
         "pressures": pressures[:2000],
         "flows": velocities[:2000],
         "node_table": node_table,
         "pipe_table": pipe_table,
     }
 
-    return RunGetRes(status=run.status.value, logs=run.logs or "", artifacts=view)
+    # Failure details (reason/tips from metadata) + user code line from artifacts
+    reason = (run.metadata or {}).get("failure_reason")
+    tips = (run.metadata or {}).get("tips") or []
+    code_line = artifacts.get("user_error_line") if artifacts.get("user_code_error") else None
+    code_msg = artifacts.get("user_error") if artifacts.get("user_code_error") else None
+    if reason or tips or code_line or code_msg:
+        failure = {"reason": reason, "tips": tips}
+        if code_line:
+            failure["code_line"] = code_line
+        if code_msg:
+            failure["code_message"] = code_msg
+        view["failure"] = failure
 
+    return RunGetRes(status=run.status.value, logs=cleaned_logs, artifacts=view)
 
 @router.get("/runs/{run_id}/kpis", response_model=KpisRes, summary="Get run KPIs")
 def get_run_kpis(run_id: str = Path(...), request: Request = None) -> KpisRes:

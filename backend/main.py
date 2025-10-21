@@ -11,6 +11,7 @@ from api import (
     routes_runs,
     routes_chat,
     routes_tools,
+    routes_memory,
 )
 
 from core.storage import Storage
@@ -62,6 +63,8 @@ def create_app() -> FastAPI:
     app.state.storage = Storage()
     app.state.tools = CoreToolRegistry(storage=app.state.storage)
     app.state.orchestrator = AgentOrchestrator(storage=app.state.storage, tool_registry=app.state.tools)
+    from core.memory import MemoryStore 
+    app.state.memory = MemoryStore(db_path=app.state.storage.db_path)
 
     @app.on_event("startup")
     async def _startup_debug_ws():
@@ -88,6 +91,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_runs.router, prefix="/api")
     app.include_router(routes_chat.router, prefix="/api")  # ← ensures POST /api/chat
     app.include_router(routes_tools.router, prefix="/api")
+    app.include_router(routes_memory.router, prefix="/api")
 
     # Log all routes once to confirm /api/chat is present
     try:
@@ -100,7 +104,3 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-@app.on_event("startup")
-async def _startup_debug_ws():
-        # live debug WS manager
-    app.state.debug_ws = DebugWSManager()

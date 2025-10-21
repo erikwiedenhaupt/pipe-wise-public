@@ -5,20 +5,14 @@ function joinPath(a, b) {
   return (a.replace(/\/+$/, "") + "/" + b.replace(/^\/+/, ""));
 }
 
+// replace toWsUrlPath in both files
 function toWsUrlPath(path) {
-  const base = process.env.NEXT_PUBLIC_API_BASE; // e.g., http://localhost:8000/api
-  let u;
-  if (base) {
-    u = new URL(base);
-  } else if (typeof window !== "undefined") {
-    u = new URL(window.location.origin);
-  } else {
-    return path;
-  }
+  const base = process.env.NEXT_PUBLIC_API_BASE || "/api";
+  const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+  const u = new URL(base, origin);
   u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
-  u.pathname = joinPath(u.pathname || "", path); // preserves "/api"
-  u.search = "";
-  u.hash = "";
+  u.pathname = (u.pathname.replace(/\/+$/, "") || "") + (path.startsWith("/") ? path : `/${path}`);
+  u.search = ""; u.hash = "";
   return u.toString();
 }
 
@@ -81,16 +75,23 @@ export default function DebugPanel({ channel, initial = null }) {
         retryMs = 1000;
       };
 
-      ws.onmessage = (evt) => {
-        try {
-          const msg = JSON.parse(evt.data);
-          if (!paused) {
-            setEvents((prev) => [...prev, msg].slice(-500));
-          }
-        } catch {
-          // ignore
+      // components/DebugPanel.jsx (patch inside ws.onmessage)
+    ws.onmessage = (evt) => {
+      try {
+        const msg = JSON.parse(evt.data);
+        // forward run switch events to the app
+        if (msg?.event?.type === 'ui.switch_run' && msg?.event?.run_id) {
+          window.dispatchEvent(
+            new CustomEvent('pipewise:switch-run', { detail: { runId: msg.event.run_id } })
+          );
         }
-      };
+        if (!paused) {
+          setEvents((prev) => [...prev, msg].slice(-500));
+        }
+      } catch {
+        // ignore
+      }
+    };
 
       ws.onclose = () => {
         setStatus("disconnected");

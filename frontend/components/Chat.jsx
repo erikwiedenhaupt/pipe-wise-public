@@ -1,10 +1,10 @@
 // components/Chat.jsx
-import { useEffect, useMemo, useRef, useState } from "react";
-import { chat as chatApi } from "../lib/api";
+import { useEffect, useRef, useState } from "react";
 import ChatMessage from "./ChatMessage";
 import ToolCallList from "./ToolCallList";
+import { API_BASE, postChat } from '../lib/api';
 
-export default function Chat({ projectId, versionId, runId, audience = "expert", onAdoptRunId, onApplyCode }) {
+export default function Chat({ projectId, versionId, runId, audience = "expert", settings = {}, onAdoptRunId, onApplyCode }) {
   const [messages, setMessages] = useState(() => {
     if (typeof window === "undefined") return [];
     const raw = localStorage.getItem(`pipewise_chat_${projectId || "adhoc"}`);
@@ -24,6 +24,16 @@ export default function Chat({ projectId, versionId, runId, audience = "expert",
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
+  const normalizedSettings = {
+    model: settings.model || undefined,
+    tokenLimit: typeof settings.tokenLimit === "number" ? settings.tokenLimit : 1200,
+    length: settings.length || "standard",
+    lengthHint: settings.lengthHint || "",
+    kpiProfile: settings.kpiProfile || "standard",
+    thresholds: settings.thresholds || undefined,
+    showToolDetails: !!settings.chatShowToolDetails,
+  };
+
   const send = async () => {
     const text = input.trim();
     if (!text || busy) return;
@@ -32,15 +42,30 @@ export default function Chat({ projectId, versionId, runId, audience = "expert",
     setInput("");
 
     try {
-      const res = await chatApi({
+      const ch = projectId || "adhoc";
+      window.dispatchEvent(new CustomEvent("pipewise:graph-pulse", {
+        detail: { channel: ch, type: "graph.abort" }
+      }));
+    } catch {}
+
+    try {
+      const res = await postChat(API_BASE, {
         project_id: projectId,
         version_id: versionId,
         run_id: runId,
         message: text,
-        context: { history: messages.slice(-8), audience },
+        context: {
+          history: messages.slice(-8),
+          audience,
+          settings: normalizedSettings,
+        },
       });
 
-      // Try to apply code changes if returned by tools (modify_code or fix_issues)
+      const switchRunId = res?.references?.new_run_id || res?.references?.run_id;
+      if (switchRunId && switchRunId !== runId && typeof onAdoptRunId === "function") {
+        onAdoptRunId(switchRunId);
+      }
+
       if (Array.isArray(res.tool_calls)) {
         for (const t of res.tool_calls) {
           const r = t?.result || {};
@@ -48,12 +73,6 @@ export default function Chat({ projectId, versionId, runId, audience = "expert",
             onApplyCode(r.modified_code, r.diff || "");
           }
         }
-      }
-
-      // Adopt run_id if new
-      const newRunId = res?.references?.run_id;
-      if (newRunId && newRunId !== runId && typeof onAdoptRunId === "function") {
-        onAdoptRunId(newRunId);
       }
 
       setMessages((m) => [
@@ -74,16 +93,20 @@ export default function Chat({ projectId, versionId, runId, audience = "expert",
   const canSend = input.trim().length > 0 && !busy;
 
   return (
-    <div className="rounded-lg bg-[var(--panel)] border border-slate-700 p-3">
+    <div className="rounded-lg bg-[var(--panel)] border border-slate-700 p-3 min-h-[700px]">
       <div className="flex items-center justify-between mb-2">
         <div className="text-sm text-slate-300">Chat</div>
         <div className="text-xs text-slate-400">{projectId ? `project:${projectId.slice(0, 6)}…` : "no project"} | {audience}</div>
       </div>
 
-      <div ref={listRef} className="h-72 overflow-auto rounded border border-slate-700 bg-[var(--panel-2)] p-2">
+      {/* Taller, responsive message list */}
+      <div
+        ref={listRef}
+        className="min-h-[600px] md:min-h-[680px] xl:min-h-[720px] max-h-[75vh] overflow-auto rounded border border-slate-700 bg-[var(--panel-2)] p-2"
+      >
         {messages.length === 0 ? (
           <div className="text-sm text-slate-400">
-            Try “/simulate”. Ask “summarize the network” or “fix the problems”.
+            Try “summarize the network”, “/simulate”, or “fix the issues”.
           </div>
         ) : (
           messages.map((m, i) => (
@@ -91,7 +114,7 @@ export default function Chat({ projectId, versionId, runId, audience = "expert",
               <ChatMessage role={m.role} content={m.content} />
               {m.role === "assistant" && m.meta ? (
                 <div className="ml-1">
-                  <ToolCallList toolCalls={m.meta.tool_calls} references={m.meta.references} />
+                  <ToolCallList toolCalls={m.meta.tool_calls} collapsedDefault={!normalizedSettings.showToolDetails} />
                   {m.meta?.references?.run_id && onAdoptRunId ? (
                     <div className="mt-2">
                       <button
@@ -112,15 +135,10 @@ export default function Chat({ projectId, versionId, runId, audience = "expert",
       <div className="mt-2 flex gap-2">
         <input
           className="flex-1 bg-[var(--panel-2)] border border-slate-700 rounded px-2 py-1 text-sm"
-          placeholder="Type a message… e.g., summarize or fix"
+          placeholder="Type a message…"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              if (canSend) send();
-            }
-          }}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (canSend) send(); } }}
         />
         <button onClick={send} disabled={!canSend} className="px-3 py-1 rounded bg-[var(--accent)] hover:opacity-90 disabled:opacity-50">
           {busy ? "Sending…" : "Send"}

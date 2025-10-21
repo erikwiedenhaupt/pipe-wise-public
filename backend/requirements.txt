@@ -16,3 +16,4 @@ networkx
 matplotlib
 orjson
 pytest
+starlette

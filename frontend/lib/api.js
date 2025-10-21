@@ -43,10 +43,40 @@ const inferBase = () => {
   export const getRunIssues = (runId) => api(`/runs/${runId}/issues`);
   export const listProjectRuns = (projectId) => api(`/projects/${projectId}/runs`);
   export const deleteRun = (runId) => api(`/runs/${runId}`, { method: "DELETE" });
-  
+  export const getSweep = (runId) => api(`/sweeps/${runId}`);
   export const listTools = () => api("/tools");
+  // lib/api.js – add this export
+  export const parseGraph = (code) => api("/parse-graph", { method: "POST", body: { code } });
   
   export const scenarioSweep = (payload) =>
     api("/scenario-sweep", { method: "POST", body: payload });
   
   export const chat = (payload) => api("/chat", { method: "POST", body: payload });
+
+  // frontend/lib/api.js (example wrapper)
+export async function postChat(apiBase, payload) {
+  const res = await fetch(`${apiBase}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`chat failed: ${res.status}`);
+  const data = await res.json();
+
+  // If backend produced a new run, switch UI selection
+  // lib/api.js inside postChat(...)
+  const newRunId = data?.references?.new_run_id;
+  if (newRunId && data?.references?.should_switch_run) {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('pipewise:switch-run', { detail: { runId: newRunId } }));
+    }
+  } else {
+    const rid = data?.references?.run_id;
+    if (rid && data?.references?.should_switch_run) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('pipewise:switch-run', { detail: { runId: rid } }));
+      }
+    }
+  }
+  return data;
+}

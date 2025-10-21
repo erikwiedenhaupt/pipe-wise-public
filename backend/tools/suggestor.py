@@ -24,19 +24,20 @@ class Suggestion(BaseModel):
     rationale: Optional[str] = None
 
 
+# tools/suggestor.py
 ISSUE_TO_SUGGESTIONS = {
     "VEL_HIGH": lambda loc: Suggestion(
         id=f"S::{loc}::VEL_DOWN",
         issue_id=None,
         action="increase_diameter",
-        details={"element_id": loc, "target_velocity_m_per_s": 1.5},
-        rationale="Higher diameter reduces velocity for the same flow.",
+        details={"element_id": loc, "target_velocity_m_per_s": 12.0},
+        rationale="Increasing diameter reduces velocity for the same flow.",
     ),
     "P_LOW": lambda loc: Suggestion(
         id=f"S::{loc}::BOOST_P",
         issue_id=None,
         action="increase_source_pressure",
-        details={"location": loc, "delta_bar": 0.5},
+        details={"location": loc, "delta_bar": 0.2},
         rationale="Raising inlet pressure can lift downstream pressure.",
     ),
     "RE_LOW": lambda loc: Suggestion(
@@ -45,6 +46,20 @@ ISSUE_TO_SUGGESTIONS = {
         action="adjust_fluid_or_velocity",
         details={"location": loc, "target_reynolds": 3000},
         rationale="Increase velocity/diameter or change fluid to raise Reynolds.",
+    ),
+    "DP_HIGH": lambda loc: Suggestion(
+        id=f"S::{loc}::DP_REDUCE",
+        issue_id=None,
+        action="reduce_segment_dp",
+        details={"element_id": loc, "options": ["increase_diameter", "shorten_length", "reduce_roughness", "parallel_path"]},
+        rationale="Lower Δp by reducing resistance or load in this segment.",
+    ),
+    "TEMP_OUT_OF_RANGE": lambda loc: Suggestion(
+        id=f"S::{loc}::TEMP_FIX",
+        issue_id=None,
+        action="adjust_temperature_controls",
+        details={"location": loc, "options": ["insulation", "change_supply_temp", "rebalance_flows"]},
+        rationale="Keep temperatures within target band by insulation or control changes.",
     ),
 }
 

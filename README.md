@@ -1,287 +1,159 @@
-# 🌐 Pipewise – LLM-Assisted Pandapipes Analysis  
 
-[![Docker](https://img.shields.io/badge/Docker-ready-blue?logo=docker)](https://www.docker.com/)  
-[![Python](https://img.shields.io/badge/Python-3.11+-green?logo=python)](https://www.python.org/)  
-[![Node](https://img.shields.io/badge/Node-18+-green?logo=node.js)](https://nodejs.org/)  
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-teal?logo=fastapi)](https://fastapi.tiangolo.com/)  
-[![Next.js](https://img.shields.io/badge/Next.js-13+-black?logo=next.js)](https://nextjs.org/)  
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)  
+# Pipe-Wise
 
-Pipewise is a **full-stack application** that helps non-technical users understand and improve gas/heat networks modeled in **pandapipes**.  
-
-It combines:
-
-- 🎨 **Frontend**: Next.js + Tailwind UI with chat & visualization  
-- ⚡ **Backend**: FastAPI with sandboxed pandapipes execution, KPIs, diagnostics, and Azure OpenAI agents  
-- 💾 **Storage**: SQLite + JSON artifacts for reproducible runs and audits  
+**Pipe-Wise** is a tool for creating, analyzing, and interacting with **Panda-Pipes networks**. It combines a **frontend** (Next.js) for uploads and chat with a **backend** (FastAPI) for analysis and communication with an LLM agent.
 
 ---
 
-## ✨ Key Capabilities
+## 📝 Features
 
-- 🔒 Run pandapipes code safely in a sandbox and persist artifacts  
-- 📊 Compute KPIs and detect issues (e.g., high velocities, low pressures)  
-- 🤖 LLM assistant that calls tools (`simulate`, `get_kpis`, `diagnose`, `auto-fix`) and produces **plain-language summaries**  
-- 🛠️ Code mutation tools (increase diameter, bump ext_grid pressure, set fluid, etc.)  
-- 🔄 Iterative auto-fix workflows (e.g., target velocity)  
-- 📈 Scenario sweeps to explore parameter spaces  
-- 🧩 Developer-friendly tool registry and agent supervisor  
+* Create or upload Panda-Pipes networks
+* Analysis by an LLM agent (via OpenAI GPT API)
+* Interactive chat interface for discussing the network structure
+* Detection of potential weaknesses in the network
+* Hot-reload for rapid development in both frontend and backend
 
 ---
 
-## 📂 Repository Structure
+## ⚙️ Architecture
 
-```bash
-pipewise/
-├── backend/                   # FastAPI backend
-│   ├── agents/                # Small, self-registered agent modules
-│   ├── api/                   # REST & WebSocket routes
-│   ├── core/                  # Storage, registry, sandbox, orchestrator
-│   ├── tools/                 # Pandapipes runner, KPIs, issues, mutations, scenarios
-│   └── main.py                # FastAPI entrypoint
+```
+Pipe-Wise
 │
-├── frontend/                  # Next.js + Tailwind frontend
-│   ├── components/            # Reusable UI components
-│   ├── lib/                   # API helpers
-│   ├── pages/                 # Next.js routes (chat, project flows, etc.)
-│   └── styles/                # Tailwind configs & globals
+├─ frontend/          # Next.js App (Upload + Chat)
+│   ├─ pages/
+│   ├─ components/
+│   ├─ package.json
+│   └─ Dockerfile
 │
-├── docker-compose.yml         # Full-stack orchestration
-├── .gitignore
-└── README.md
-
-
+├─ backend/           # FastAPI API (Upload, Analysis)
+│   ├─ main.py
+│   ├─ requirements.txt
+│   ├─ .env           # API Keys, Configuration (do not commit!)
+│   └─ Dockerfile
+│
+└─ docker-compose.yml
 ```
 
 ---
 
-## 🏗️ Architecture
+## 🚀 Installation & Usage
 
-**High-level flow:**
-1. User creates a project and saves network code (version).  
-2. Simulation runs in a sandboxed subprocess.  
-3. Backend stores artifacts (design/results tables + summary).  
-4. KPIs & issues derived from artifacts.  
-5. LLM chat orchestrates tool calls + compaction → generates clear answer.  
+### 1. Prerequisites
 
-**Security:**  
-- Subprocess with CPU/memory/time limits  
-- Artifacts & scratch space stored under `/tmp/pipewise_storage`  
-
-**Azure OpenAI:**  
-- Uses Chat Completions API with tool calling  
-- Fallback to compact summaries if content filters trigger  
-- Token budgets optimized to avoid context overflow  
+* Docker & Docker Compose
+* Node.js / npm (for local frontend development)
+* Git
 
 ---
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Docker & Docker Compose  
-- Node 18+ (if running frontend locally)  
-- Python 3.11+ (if running backend locally)  
-- Azure OpenAI deployment (model name + API version)  
-
-### Environment Variables
-
-| Name                      | Required | Default               | Description |
-|---------------------------|----------|-----------------------|-------------|
-| `AZURE_OPENAI_ENDPOINT`   | ✅ yes   | —                     | API endpoint (e.g. `https://your-resource.openai.azure.com`) |
-| `AZURE_OPENAI_API_KEY`    | ✅ yes   | —                     | Azure API key |
-| `AZURE_OPENAI_API_VERSION`| ✅ yes   | `2025-04-01-preview`  | API version |
-| `AZURE_OPENAI_DEPLOYMENT` | ✅ yes   | —                     | Model name (e.g., `gpt-5`) |
-| `PIPEWISE_STORAGE_PATH`   | ❌ no    | `/tmp/pipewise_storage` | DB + artifact storage |
-| `PIPEWISE_API_VERSION`    | ❌ no    | `v1`                  | Reported API version |
-| `PIPEWISE_VERSION`        | ❌ no    | `0.1.0`               | Service version |
-
-**Frontend config (`frontend/.env.local`):**
-```bash
-NEXT_PUBLIC_API_BASE=http://localhost:8000/api
-````
-
-### Run with Docker Compose
+### 2. Clone the repository
 
 ```bash
-docker compose up --build
+git clone https://github.com/<USERNAME>/pipe-wise.git
+cd pipe-wise
 ```
 
-* Backend → [http://localhost:8000](http://localhost:8000) (docs at `/docs`)
-* Frontend → [http://localhost:3000](http://localhost:3000)
+---
 
-### Local Dev (separate terminals)
+### 3. Create a `.env` file
 
-**Backend**
+In the `backend/` directory:
 
 ```bash
 cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+nano .env
 ```
 
-**Frontend**
+Example `.env`:
+
+```
+OPENAI_API_KEY=your_api_key_here
+OPENAI_API_ENDPOINT=https://fhgenie-api-ieg-fred-ieg.openai.azure.com/
+MODEL=gpt-4o-mini-2024-07-18
+```
+
+> ⚠️ Never commit this file to GitHub
+
+---
+
+### 4. Start Docker containers
+
+From the root directory:
+
+```bash
+docker-compose up -d --build
+```
+
+* `-d` → run in background
+* `--build` → rebuild images (needed after code changes)
+
+### 5. Access
+
+* **Frontend:** `http://<VPS-IP>:3000`
+* **Backend API & Docs:** `http://<VPS-IP>:8000` and `http://<VPS-IP>:8000/docs`
+
+---
+
+### 6. Hot-Reload
+
+* Frontend: changes in `frontend/` are automatically reloaded
+* Backend: changes in `backend/` are automatically reloaded with `uvicorn --reload`
+
+---
+
+### 7. LLM Integration
+
+* Backend communicates with the OpenAI GPT API using `.env` configuration
+* LLM agent can analyze networks, provide comments, and detect weaknesses
+
+---
+
+### 8. Development
+
+#### Local testing without Docker
+
+Frontend:
 
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev -- -H 0.0.0.0 -p 3000
 ```
 
----
-
-## 🔄 Core Workflows
-
-### 1) Create Project & Version
+Backend:
 
 ```bash
-curl -X POST http://localhost:8000/api/projects \
-  -H "Content-Type: application/json" \
-  -d '{}'
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Save version with pandapipes code:
+---
+
+### 9. Git Workflow
+
+1. Create a branch:
 
 ```bash
-curl -X POST http://localhost:8000/api/projects/<PROJECT_ID>/versions \
-  -H "Content-Type: application/json" \
-  -d '{"code":"...", "meta":{"label":"v1"}}'
+git checkout -b feature/<feature-name>
 ```
 
----
-
-### 2) Run Simulation
+2. Commit changes:
 
 ```bash
-curl -X POST http://localhost:8000/api/simulate \
-  -H "Content-Type: application/json" \
-  -d '{"project_id":"<PROJECT_ID>", "version_id":"<VERSION_ID>"}'
+git add .
+git commit -m "Description of changes"
+git push origin feature/<feature-name>
 ```
 
-Artifacts → `/tmp/pipewise_storage/artifacts_<RUN_ID>.json`
+3. Open a Pull Request → Review → Merge
 
 ---
 
-### 3) Inspect KPIs & Issues
+### 10. Notes
 
-```bash
-curl http://localhost:8000/api/runs/<RUN_ID>/kpis
-curl http://localhost:8000/api/runs/<RUN_ID>/issues
-```
+* Ports `3000` (frontend) and `8000` (backend) must be open on the VPS
+* `.env` must not be public
 
----
-
-### 4) Chat Assistant
-
-```bash
-curl -X POST http://localhost:8000/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{
-    "project_id":"<PROJECT_ID>",
-    "version_id":"<VERSION_ID>",
-    "run_id":"<RUN_ID>",
-    "message":"Summarize for a non-technical audience",
-    "context":{"audience":"novice"}
-  }'
-```
-
-Debug LLM with:
-
-```bash
-ws://localhost:8000/api/chat/ws/debug/<PROJECT_ID>
-```
-
----
-
-### 5) Auto-Fix Velocity
-
-Ask: *“Fix max velocity to 12 m/s”*
-→ Assistant runs iterative diameter scaling / pressure bump until target is met.
-
----
-
-### 6) Modify Code Explicitly
-
-```bash
-curl -X POST http://localhost:8000/api/modify \
-  -H "Content-Type: application/json" \
-  -d '{ "code_or_version": {"code":"..."}, "actions": [{"type":"scale_diameter", "factor": 1.12}] }'
-```
-
----
-
-### 7) Scenario Sweep
-
-```bash
-curl -X POST http://localhost:8000/api/scenario-sweep \
-  -H "Content-Type: application/json" \
-  -d '{ "code_or_version":{"code":"..."}, "parameters":[{"name":"diameter","values":[0.08,0.10,0.12]}] }'
-```
-
----
-
-## 🧰 LLM Chat Tools
-
-| Tool            | Purpose                         |
-| --------------- | ------------------------------- |
-| `simulate`      | Run pandapipes & save artifacts |
-| `get_kpis`      | Compute KPIs from artifacts     |
-| `get_issues`    | Detect issues & suggest fixes   |
-| `modify_code`   | Apply textual mutations to code |
-| `fix_issues`    | Auto-resolve issues (iterative) |
-| `validate_code` | Static pandapipes code checks   |
-| `list_tools`    | List registered tools           |
-
----
-
-## 📝 Pandapipes Example
-
-```python
-import pandapipes as pp
-
-net = pp.create_empty_network(fluid="lgas")
-
-j1 = pp.create_junction(net, pn_bar=5.0, tfluid_k=293.15, name="J1")
-j2 = pp.create_junction(net, pn_bar=5.0, tfluid_k=293.15, name="J2")
-
-pp.create_ext_grid(net, junction=j1, p_bar=5.0, t_k=293.15, name="Grid")
-pp.create_sink(net, junction=j2, mdot_kg_per_s=2.0, name="Demand")
-
-pp.create_pipe_from_parameters(
-    net, from_junction=j1, to_junction=j2,
-    length_km=0.2, diameter_m=0.100, k_mm=0.1, name="P0"
-)
-```
-
----
-
-## 🛠️ Troubleshooting
-
-* **`no_code` error** → Ensure `source_code` is embedded in artifacts
-* **Azure `content_filter` block** → Pipewise retries with sanitized compact summary
-* **Empty responses** → Large code, context overflow → tool payloads are compacted
-* **CORS/404 from frontend** → Check `NEXT_PUBLIC_API_BASE` points to backend `/api`
-* **Sandbox too strict** → Adjust `core/security.py` limits
-
----
-
-## 🔧 Customization
-
-* **Models** → Use a larger-context Azure OpenAI model for big codebases
-* **Prompts** → Edit `SYSTEM_PROMPT_BASE` + styles in `routes_chat.py`
-* **Diagnostics** → Update KPI thresholds in `kpi_calculator.py` & `issue_detector.py`
-* **Mutations** → Extend `network_mutations.py` with new actions
-* **Scenarios** → Add combinatorics in `scenario_engine.py`
-
----
-
-## 🗺️ Roadmap
-
-* Interactive graph overlays & KPI visualization
-* Streaming chat + live tool progress in UI
-* Scenario reports & Pareto front analysis
-* Multi-run comparisons & regression checks
-* Fine-grained mutation selectors (by ID/tag)
-* Audit logs & stronger policy handling
-
----
 

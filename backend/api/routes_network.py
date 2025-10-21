@@ -9,6 +9,7 @@ import uuid
 import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+import ast
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -17,14 +18,15 @@ from core.models import AnalysisRun, AnalysisStatus  # type: ignore
 from tools.pandapipes_runner import run_pandapipes_code  # type: ignore
 from tools.network_mutations import NetworkMutationsTool  # type: ignore
 from tools.scenario_engine import ScenarioEngineTool  # type: ignore
+from core.security import validate_pandapipes_code
 
 router = APIRouter(tags=["network"], prefix="")
 
 # Request/Response DTOs
 class ValidationMessage(BaseModel):
-    level: str  # 'info' | 'warn' | 'error'
-    where: Optional[str] = None
+    level: str
     text: str
+    where: Optional[Dict[str, int]] = None  # allow {"line": int, "col": int}
 
 
 class ValidateReq(BaseModel):
@@ -109,21 +111,25 @@ class ScenarioSweepRes(BaseModel):
     status: str
 
 
-@router.post("/validate", response_model=ValidateRes, summary="Validate pasted network code")
+@router.post("/validate", response_model=ValidateRes, summary="Validate safe Pandapipes code")
 def validate(body: ValidateReq) -> ValidateRes:
-    messages: List[ValidationMessage] = []
-    code = (body.code or "").strip()
-    if not code:
-        messages.append(ValidationMessage(level="error", text="code is empty"))
-        return ValidateRes(ok=False, messages=messages, inferred={})
-    if "import pandapipes" not in code:
-        messages.append(ValidationMessage(level="warn", text="Missing 'import pandapipes as pp'"))
-    if "os" in code:
-        messages.append(ValidationMessage(level="blocked", text="Run blocked because of suspicios behaviour'"))
-        return ValidateRes(ok=False, messages=messages, inferred={})
-    inferred = {"fluid": None, "components": {}, "demands": {}}
-    return ValidateRes(ok=True, messages=messages, inferred=inferred)
-
+    res = validate_pandapipes_code(body.code or "")
+    msgs = []
+    for m in (res.get("messages") or []):
+        where = m.get("where")
+        if isinstance(where, dict):
+            # normalize to ints if available
+            w = {}
+            if "line" in where:
+                try: w["line"] = int(where["line"])
+                except Exception: pass
+            if "col" in where:
+                try: w["col"] = int(where["col"])
+                except Exception: pass
+            where = w or None
+        msgs.append(ValidationMessage(level=m.get("level"), text=m.get("text"), where=where))
+    inferred = res.get("inferred") or {"fluid": None, "components": {}}
+    return ValidateRes(ok=bool(res.get("ok")), messages=msgs, inferred=inferred)
 
 def _load_code_from_version(request: Request, project_id: Optional[str], version_id: Optional[str]) -> Optional[str]:
     if not version_id:
@@ -141,6 +147,10 @@ def parse_graph(body: ParseGraphReq, request: Request) -> ParseGraphRes:
     code = (body.code or "").strip()
     if not code:
         raise HTTPException(status_code=400, detail="code is required")
+
+    vres = validate_pandapipes_code(code)
+    if (not vres.get("ok")) or any((m.get("level", "").lower() == "blocked") for m in (vres.get("messages") or [])):
+        raise HTTPException(status_code=400, detail={"error": "validation_failed", "messages": vres.get("messages", [])})
     # Reuse sandbox runner to get design artifacts
     rr = run_pandapipes_code(code)
     artifacts = rr.get("artifacts") or {}
@@ -191,18 +201,39 @@ def parse_graph(body: ParseGraphReq, request: Request) -> ParseGraphRes:
     return ParseGraphRes(graph=Graph(nodes=nodes, edges=edges), components=components)
 
 
+
+
+from starlette.concurrency import run_in_threadpool  # add if not present
+import asyncio  # add if not present
+
 # backend/api/routes_network.py
 @router.post("/simulate", response_model=SimulateRes, summary="Simulate and create a run")
-def simulate(body: SimulateReq, request: Request) -> SimulateRes:
+async def simulate(body: SimulateReq, request: Request) -> SimulateRes:
     storage = request.app.state.storage
     rid = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
+    channel = body.project_id or "adhoc"
 
+    async def _emit(evtype: str, data: Dict[str, Any]):
+        try:
+            mgr = getattr(request.app.state, "debug_ws", None)
+            if mgr:
+                await mgr.broadcast(channel, {"type": evtype, **data})
+        except Exception:
+            pass
+
+    # Resolve code
     code = (body.code or "").strip()
     if not code:
         code = _load_code_from_version(request, body.project_id, body.version_id) or ""
 
-    if not code:
+    vres = validate_pandapipes_code(code)
+    blocked = (not vres.get("ok")) or any((m.get("level", "").lower() == "blocked") for m in (vres.get("messages") or []))
+    if blocked:
+        msgs = vres.get("messages") or []
+        failure_reason = "; ".join([f"{m.get('level')}: {m.get('text')}" for m in msgs])
+        log_lines = "\n".join([f"- {m.get('level')}: {m.get('text')}" for m in msgs])
+
         run = AnalysisRun(
             id=rid,
             project_id=body.project_id or "adhoc",
@@ -211,22 +242,35 @@ def simulate(body: SimulateReq, request: Request) -> SimulateRes:
             finished_at=now,
             status=AnalysisStatus.FAILED,
             executor="simulate",
-            metadata={"reason": "no_code"},
-            logs="No code provided and version not found.",
+            metadata={
+                "reason": "validation_failed",
+                "failure_reason": failure_reason,
+                "inferred": vres.get("inferred") or {},
+            },
+            logs=f"Validation failed:\n{log_lines}",
+            kpis=[], issues=[], suggestions=[],
         )
         storage.save_analysis_run(run)
+        await _emit("sim.end", {"run_id": rid, "ok": False, "reason": "validation_failed"})
         return SimulateRes(run_id=rid, status="failed")
 
-    result = run_pandapipes_code(code)
-    status = "succeeded" if result.get("ok") else "failed"
+    # Optional: notify start
+    await _emit("sim.start", {"run_id": rid})
+
+    # Run pandapipes in threadpool
+    def _do_run():
+        return run_pandapipes_code(code)
+
+    result = await run_in_threadpool(_do_run)
+    status_ok = bool(result.get("ok"))
 
     artifacts = result.get("artifacts") or {}
-    # IMPORTANT: embed source code so chat tools can resolve code from run_id later
     try:
         artifacts["source_code"] = code
     except Exception:
         pass
 
+    # Save artifacts
     artifacts_path = storage.payload_dir / f"artifacts_{rid}.json"
     try:
         with open(artifacts_path, "w", encoding="utf8") as fh:
@@ -234,22 +278,32 @@ def simulate(body: SimulateReq, request: Request) -> SimulateRes:
     except Exception:
         pass
 
+    # Emit stderr into debug
+    stderr_txt = (result.get("stderr") or "").strip()
+    if stderr_txt:
+        await _emit("sim.stderr", {"run_id": rid, "stderr": stderr_txt[:4000]})
+
+    # Persist run row
     run = AnalysisRun(
         id=rid,
         project_id=body.project_id or "adhoc",
         network_version_id=body.version_id or "adhoc",
         started_at=now,
-        finished_at=now,
-        status=AnalysisStatus.SUCCESS if status == "succeeded" else AnalysisStatus.FAILED,
+        finished_at=datetime.now(timezone.utc),
+        status=AnalysisStatus.SUCCESS if status_ok else AnalysisStatus.FAILED,
         executor="simulate",
-        metadata={"artifacts_path": str(artifacts_path), "options": body.options or {}},
-        logs=(result.get("logs") or "") + ("\nSTDERR:\n" + (result.get("stderr") or "") if result.get("stderr") else ""),
-        kpis=[],
-        issues=[],
-        suggestions=[],
+        metadata={
+            "artifacts_path": str(artifacts_path),
+            "options": body.options or {},
+            "failure_reason": result.get("reason"),
+        },
+        logs=(result.get("logs") or "") + (("\nSTDERR:\n" + stderr_txt) if stderr_txt else ""),
+        kpis=[], issues=[], suggestions=[],
     )
     storage.save_analysis_run(run)
-    return SimulateRes(run_id=rid, status=status)
+
+    await _emit("sim.end", {"run_id": rid, "ok": status_ok, "reason": result.get("reason")})
+    return SimulateRes(run_id=rid, status="succeeded" if status_ok else "failed")
 
 
 @router.post("/modify", response_model=ModifyRes, summary="Apply code modifications")
@@ -273,7 +327,11 @@ def scenario_sweep(body: ScenarioSweepReq, request: Request) -> ScenarioSweepRes
         code = _load_code_from_version(request, body.code_or_version.project_id, body.code_or_version.version_id) or ""
     if not code:
         raise HTTPException(status_code=400, detail="Provide code or a valid project_id+version_id")
-
+    
+    val = validate_pandapipes_code(code)
+    if (not val.get("ok")) or any(m.get("level") in ("blocked", "error") for m in (val.get("messages") or [])):
+        raise HTTPException(status_code=400, detail="validation_failed")
+    
     engine = ScenarioEngineTool()
     payload = engine.run(code, [p.model_dump() for p in (body.parameters or [])])
     # persist sweep results
@@ -300,3 +358,16 @@ def scenario_sweep(body: ScenarioSweepReq, request: Request) -> ScenarioSweepRes
     )
     storage.save_analysis_run(run)
     return ScenarioSweepRes(run_id=rid, design_space_size=int(payload.get("design_space_size") or 0), status="succeeded")
+
+# backend/api/routes_network.py
+@router.get("/sweeps/{run_id}", summary="Get scenario sweep results")
+def get_sweep_results(run_id: str, request: Request) -> Dict[str, Any]:
+    storage = request.app.state.storage
+    path = storage.payload_dir / f"sweep_{run_id}.json"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="sweep_not_found")
+    try:
+        with open(path, "r", encoding="utf8") as fh:
+            return json.load(fh)
+    except Exception:
+        raise HTTPException(status_code=500, detail="failed_to_read_sweep")
