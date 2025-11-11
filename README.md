@@ -6,7 +6,7 @@
 
 **Seminar Thesis — Development of a Digital AI Twin for Urban Infrastructure**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](./LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-green.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker\&logoColor=white)](https://www.docker.com/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?logo=fastapi\&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -203,7 +203,7 @@ If you reference this work, please cite both the **thesis title** and the **GitH
 
 ## 🪪 License
 
-Licensed under the **MIT License** — see [`LICENSE`](./LICENSE).
+Licensed under the **BSD-3 Clause** — see [`LICENSE`](./LICENSE).
 
 ---
 
@@ -221,6 +221,7 @@ Licensed under the **MIT License** — see [`LICENSE`](./LICENSE).
 🔗 **Public Repo:** [https://github.com/erikwiedenhaupt/pipe-wise-public](https://github.com/erikwiedenhaupt/pipe-wise-public)
 
 ---
+
 
 
 
